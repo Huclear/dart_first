@@ -12,106 +12,119 @@ Side? playerSide;
 Random? random;
 
 void main(List<String> arguments) {
-  print("Select the board size:\n\t1 - 3x3\n\t2 - 4x4");
-  int? option;
-  while (option == null) {
-    var inputSize = stdin.readLineSync();
-    if (inputSize == null) {
-      continue;
-    }
-    option = int.tryParse(inputSize);
+  bool keepMoving = true;
 
-    if (option != 1 && option != 2) {
-      option = null;
-    }
-  }
-
-  //ge tthe player side
-  print(
-    "Would you like to lead the play (you will play as crosses if you print YES, in case you don`t get it)?",
-  );
-  var answer = stdin.readLineSync();
-  if (answer == null || answer.toLowerCase() != "yes") {
+  do {
+    random = Random();
     print(
-      "Well, you picked the opposite to offered side. Who i am to blame you.",
+      "\n\n\n------------------------------------------------------------------------------------------------\n",
     );
-    playerSide = Side.zeroes;
-  } else {
-    print(
-      "Well, you picked the side you've been suggested to. How long did it take you to pick non other but the side of crosses.",
-    );
-    playerSide = Side.crosses;
-  }
-
-  //ask if stupid bot is needed
-  print(
-    "By the way, before you start i`d like to ask if you have the real opponent to play with. If not you`ll be pushed to play with stupid bot, who place signs randomly. (YES - turn bot of)",
-  );
-  answer = stdin.readLineSync();
-
-  var needBot = false;
-  if (answer == null || answer.toLowerCase() != "yes") {
-    print(
-      "Well, enjoy playing with the bot, not knowing basic combinations to win.",
-    );
-    needBot = true;
-  } else {
-    print("Well, enjoy this console sheet, i guess.");
-  }
-
-  //initializing game settings
-  if (option == 1) initializeGame(3);
-
-  if (option == 2) initializeGame(4);
-
-  //the game
-  Result? res;
-  while (res == null) {
-
-    //defining the turns` priority
-    if (playerSide == Side.crosses) {
-      printSheet();
-      makeTurn(playerSide!);
-      res = checkIfWon();
-      if(res != null){
-        break;
+    print("Select the board size:\n\t1 - 3x3\n\t2 - 4x4");
+    int? option;
+    while (option == null) {
+      var inputSize = stdin.readLineSync();
+      if (inputSize == null) {
+        continue;
       }
+      option = int.tryParse(inputSize);
 
-      if (needBot) {
-        aiTurn();
-      } else {
-        makeTurn(Side.zeroes);
+      if (option != 1 && option != 2) {
+        option = null;
       }
+    }
+
+    //ge tthe player side
+    print(
+      "Would you like to lead the play (you will play as crosses if you print YES, in case you don`t get it)?",
+    );
+    var answer = stdin.readLineSync()?.toLowerCase();
+    if (answer == null || (answer != "yes" && answer != "no")) {
+      print("Well, you picked the random decision. Who i am to blame you.");
+      playerSide = Side.values[random!.nextInt(Side.values.length)];
+    } else if (answer == "no") {
+      print(
+        "Well, you picked the opposite to offered side. Who i am to blame you.",
+      );
+      playerSide = Side.zeroes;
+    } else if (answer == "yes") {
+      print(
+        "Well, you picked the side you've been suggested to. How long did it take you to pick non other but the side of crosses.",
+      );
+      playerSide = Side.crosses;
+    }
+
+    //ask if stupid bot is needed
+    print(
+      "By the way, before you start i`d like to ask if you have the real opponent to play with. If not you`ll be pushed to play with stupid bot, who place signs randomly. (YES - turn bot of)",
+    );
+    answer = stdin.readLineSync();
+
+    var needBot = false;
+    if (answer == null || answer.toLowerCase() != "yes") {
+      print(
+        "Well, enjoy playing with the bot, not knowing basic combinations to win.",
+      );
+      needBot = true;
     } else {
-      if (needBot) {
-        aiTurn();
+      print("Well, enjoy this console sheet, i guess.");
+    }
+
+    //initializing game settings
+    if (option == 1) initializeGame(3);
+
+    if (option == 2) initializeGame(4);
+
+    //the game
+    Result? res;
+    while (res == null) {
+      //defining the turns` priority
+      if (playerSide == Side.crosses) {
+        printSheet();
+        makeTurn(playerSide!);
         res = checkIfWon();
-        if(res != null){
+        if (res != null) {
           break;
         }
 
+        if (needBot) {
+          aiTurn();
+        } else {
+          makeTurn(Side.zeroes);
+        }
       } else {
+        if (needBot) {
+          aiTurn();
+          res = checkIfWon();
+          if (res != null) {
+            break;
+          }
+        } else {
+          printSheet();
+          makeTurn(Side.zeroes);
+        }
         printSheet();
-        makeTurn(Side.zeroes);
+        makeTurn(playerSide!);
       }
-      printSheet();
-      makeTurn(playerSide!);
+      res = checkIfWon();
     }
-    res = checkIfWon();
-  }
 
-  printSheet();
-  switch (res) {
-    case Result.CrossesWin:
-      print("Crosses won");
-      break;
-    case Result.ZeroesWin:
-      print("Toes won");
-      break;
-    case Result.Draw:
-      print("draw");
-      break;
-  }
+    printSheet();
+    switch (res) {
+      case Result.CrossesWin:
+        print("Crosses won");
+        break;
+      case Result.ZeroesWin:
+        print("Toes won");
+        break;
+      case Result.Draw:
+        print("draw");
+        break;
+    }
+
+    print("Shal we keep going with this shity game");
+    answer = stdin.readLineSync();
+    keepMoving = (answer?.toLowerCase() == "yes");
+  } while (keepMoving);
 }
 
 void makeTurn(Side currentTurn) {
@@ -163,7 +176,6 @@ void printSheet() {
 
 void initializeGame(int fieldD) {
   fieldDiameter = fieldD;
-  random = Random();
   if (fieldD == 3) {
     winComb = [
       [Cell(1, 1), Cell(2, 1), Cell(3, 1)],
@@ -226,17 +238,17 @@ Result? checkIfWon() {
   persCells = turns.where((cell) => cell.sign == Side.crosses).toList();
   if (winComb.any(
     (bl) =>
-        persCells.where((cell) => bl.contains(cell)).toList().length == bl.length,
+        persCells.where((cell) => bl.contains(cell)).toList().length ==
+        bl.length,
   )) {
     return Result.CrossesWin;
   }
 
   persCells = turns.where((cell) => cell.sign == Side.zeroes).toList();
-  var comb = winComb.where(
-    (bl) {
-      var cells = persCells.where((cell) => bl.contains(cell)).toList();
-      return cells.length == bl.length;
-    });
+  var comb = winComb.where((bl) {
+    var cells = persCells.where((cell) => bl.contains(cell)).toList();
+    return cells.length == bl.length;
+  });
   if (winComb.any(
     (bl) =>
         persCells.where((cell) => bl.contains(cell)).toList().length ==
@@ -268,8 +280,7 @@ void aiTurn() {
       )
       .map((bl) {
         var cell = bl.firstWhere(
-          (cell) =>
-              availableTurns.any((tCell) => tCell == cell),
+          (cell) => availableTurns.any((tCell) => tCell == cell),
           orElse: () => Cell(-1, -1),
         );
         if (cell.xAxis == -1) return null;
@@ -314,7 +325,7 @@ void aiTurn() {
     var index = availableTurns.indexOf(almostLooseCombs.first);
     var freeComb = availableTurns[index];
     availableTurns.removeAt(index);
-    if (playerSide== Side.crosses) {
+    if (playerSide == Side.crosses) {
       freeComb.sign = Side.zeroes;
     } else {
       freeComb.sign = Side.crosses;
